@@ -1,7 +1,8 @@
 <?php
 include ("queries.php");
 
-$conn = mysqli_connect("localhost", "media_share", "12345", "media_share");
+$passwd = getenv("MEDIA_SHARE_PASSWORD");
+$conn = mysqli_connect("localhost", "media_share", $passwd, "media_share");
 $album_id = $_GET["albumid"];
 
 $stat_album_info = $conn->prepare_statement($qry1_album_info);
@@ -48,26 +49,34 @@ DOC;
     echo "<div id=\"media_slide_container\">";
     while ($row = mysqli_fetch_array()) {
         // $row: media id, media type, media location, alt text, album story
+        $media_view_url = "mediaview.php?mediaid=" . $row[0];
+        $media_location_url = "";
+        if ($row[3] == 0) {  // is_local == 0
+            $media_location_url = $row[2];  // location
+        } else {
+            $media_location_url = "mediaget.php?mediaid=" . $row[0];
+        }
+
         echo "<div id=\"media_slide_" . $cnt . "\" class=\"media_slide\">";
         echo "<h1>第 " . $cnt . " 段</h1>";
         if ($row[1] == "image") {
-            echo "<a href=\"mediaview.php?mediaid=" . $row[0] . "\">";
-            echo "<img src=\"" . $row[2] . "\" alt=\"" . row[3] . "\">";
+            echo "<a href=\"" . $media_view_url . "\">";
+            echo "<img src=\"" . $media_location_url . "\" alt=\"" . $row[3] . "\">";
             echo "</a>";
         } else if ($row[1] == "audio") {
-            echo "<audio controls src=\"" . $row[2] . "\">";
+            echo "<audio controls src=\"" . $media_location_url . "\">";
             echo $row[3];
             echo "<br />";
-            echo "<a href=\"" . $row[2] . "\">音訊下載連接</a>";
+            echo "<a href=\"" . $media_location_url . "\">音訊下載連接</a>";
             echo "</audio>";
-            echo "<a href=\"mediaview.php?mediaid=" . $row[0] . "\">詳細資料</a>";
+            echo "<a href=\"" . $media_view_url . "\">詳細資料</a>";
         } else {  // video
-            echo "<video controls src=\"" . $row[2] . "\">";
+            echo "<video controls src=\"" . $media_location_url . "\">";
             echo $row[3];
             echo "<br />";
-            echo "<a href=\"" . $row[2] . "\">影片下載連接</a>";
+            echo "<a href=\"" . $media_location_url . "\">影片下載連接</a>";
             echo "</video>";
-            echo "<a href=\"mediaview.php?mediaid=" . $row[0] . "\">詳細資料</a>";
+            echo "<a href=\"" . $media_view_url . "\">詳細資料</a>";
         }
         echo "</div>";
     }
