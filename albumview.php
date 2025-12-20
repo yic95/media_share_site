@@ -43,21 +43,32 @@ DOC;
     $stat_album_media->execute();
     $media = $stat_album_media->get_result();
 
+    // 以下是媒體的輪盤
     $cnt = 1;
     echo "<div id=\"media_slide_container\">";
     while ($row = mysqli_fetch_array()) {
         // $row: media id, media type, media location, alt text, album story
         echo "<div id=\"media_slide_" . $cnt . "\" class=\"media_slide\">";
-        echo "<h1>圖片" . $cnt . "</h1>";
-        echo "<a href=\"mediaview.php?mediaid=" . $row[0] . "\">";
+        echo "<h1>第 " . $cnt . " 段</h1>";
         if ($row[1] == "image") {
-
-        } else if ($wor[1] == "audio") {
-
+            echo "<a href=\"mediaview.php?mediaid=" . $row[0] . "\">";
+            echo "<img src=\"" . $row[2] . "\" alt=\"" . row[3] . "\">";
+            echo "</a>";
+        } else if ($row[1] == "audio") {
+            echo "<audio controls src=\"" . $row[2] . "\">";
+            echo $row[3];
+            echo "<br />";
+            echo "<a href=\"" . $row[2] . "\">音訊下載連接</a>";
+            echo "</audio>";
+            echo "<a href=\"mediaview.php?mediaid=" . $row[0] . "\">詳細資料</a>";
         } else {  // video
-
+            echo "<video controls src=\"" . $row[2] . "\">";
+            echo $row[3];
+            echo "<br />";
+            echo "<a href=\"" . $row[2] . "\">影片下載連接</a>";
+            echo "</video>";
+            echo "<a href=\"mediaview.php?mediaid=" . $row[0] . "\">詳細資料</a>";
         }
-        echo "</a>";
         echo "</div>";
     }
     echo "</div>";
