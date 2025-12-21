@@ -1,5 +1,6 @@
 <?php
 include ("queries.php");
+include ("util.php");
 
 $passwd = getenv("MEDIA_SHARE_PASSWORD");
 $conn = mysqli_connect("localhost", "media_share", $passwd, "media_share");
@@ -39,16 +40,18 @@ if ($num_row == 0 || $album_id == null) {
     </p>
 DOC;
 } else {
+    echo "<h1>" . $title . "</h1>";
     $stat_album_media = $conn->prepare_statement($qry1_album_media);
     $stat_album_media->bind_param("i", $album_id);
     $stat_album_media->execute();
     $media = $stat_album_media->get_result();
+    $media_count = mysqli_num_rows($media);
 
     // 以下是媒體的輪盤
     $cnt = 1;
-    echo "<div id=\"media_slide_container\">";
+    echo "<div id=\"media_slide_container\"><main>";
     while ($row = mysqli_fetch_array()) {
-        // $row: media id, media type, media location, alt text, album story
+        // SELECT am.media_id, m.type, ms.location, ms.is_local, mm.description, am.description
         $media_view_url = "mediaview.php?mediaid=" . $row[0];
         $media_location_url = "";
         if ($row[3] == 0) {  // is_local == 0
@@ -58,7 +61,11 @@ DOC;
         }
 
         echo "<div id=\"media_slide_" . $cnt . "\" class=\"media_slide\">";
-        echo "<h1>第 " . $cnt . " 段</h1>";
+
+        echo "<h2>" . $cnt . "/" . $media_count . "</h2>";
+        
+        // TODO 要用CSS把這float到左邊。
+        echo "<div id=\"media_slide_media_\"" . $cnt . "\" class=\"media_slide_media\">";
         if ($row[1] == "image") {
             echo "<a href=\"" . $media_view_url . "\">";
             echo "<img src=\"" . $media_location_url . "\" alt=\"" . $row[3] . "\">";
@@ -78,9 +85,13 @@ DOC;
             echo "</video>";
             echo "<a href=\"" . $media_view_url . "\">詳細資料</a>";
         }
-        echo "</div>";
+        echo "</div>";  // media_slide_media
+
+        echo text_to_html($row[4]);
+        
+        echo "</div>";  // media_slide
     }
-    echo "</div>";
+    echo "</main></div>";  // media_slide_container
 }
         ?>
     </body>
