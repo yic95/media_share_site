@@ -6,6 +6,7 @@ $passwd = getenv("MEDIA_SHARE_PASSWORD");
 $conn = mysqli_connect("localhost", "media_share", $passwd, "media_share");
 mysqli_set_charset($conn, "utf8mb4");
 $album_id = $_GET["albumid"];
+$album_id = 0;
 
 $stat_album_info = $conn->prepare($qry1_album_info);
 $stat_album_info->bind_param("i", $album_id);
@@ -39,7 +40,7 @@ if ($num_row == 0 || is_null($album_id)) {
     </p>
 DOC;
 } else {
-    echo "<h1>" . $title . "</h1>";
+    echo "<h1>" . strip_tags($title) . "</h1>";
     $stat_album_media = $conn->prepare($qry1_album_media);
     $stat_album_media->bind_param("i", $album_id);
     $stat_album_media->execute();
@@ -61,29 +62,11 @@ DOC;
 
         echo "<div class=\"media_slide\">";
 
-        echo "<h2>" . $cnt . "/" . $media_count . "</h2>";
+        echo "<h2>{$cnt} / {$media_count}</h2>";
         
         // TODO 要用CSS把這float到左邊。
         echo "<div class=\"media_slide_media\">";
-        if ($row[1] == "image") {
-            echo "<a href=\"" . $media_view_url . "\">";
-            echo "<img src=\"" . $media_location_url . "\" alt=\"" . htmlentities($row[4]) . "\">";
-            echo "</a>";
-        } else if ($row[1] == "audio") {
-            echo "<audio controls src=\"" . $media_location_url . "\">";
-            echo strip_tags($row[4]);
-            echo "<br />";
-            echo "<a href=\"" . $media_location_url . "\">音訊下載連接</a>";
-            echo "</audio>";
-            echo "<a href=\"" . $media_view_url . "\">詳細資料</a>";
-        } else {  // video
-            echo "<video controls src=\"" . $media_location_url . "\">";
-            echo strip_tags($row[4]);
-            echo "<br />";
-            echo "<a href=\"" . $media_location_url . "\">影片下載連接</a>";
-            echo "</video>";
-            echo "<a href=\"" . $media_view_url . "\">詳細資料</a>";
-        }
+        echo media_element($row[1], $media_view_url, $media_location_url, $row[4]);
         echo "</div>";  // media_slide_media
 
         echo text_to_html(strip_tags($row[5]));
