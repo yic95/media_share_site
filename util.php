@@ -1,5 +1,7 @@
 <?php
 
+include ("secret.php");
+
 function text_to_html($text) {
     $result = "";
     $blank_line_count = 1;
@@ -52,11 +54,10 @@ function media_element($type, $view, $src, $alt) {
 }
 
 function conn_db($exit_on_error = 1, $header = 1) {
-    $passwd = getenv("MEDIA_SHARE_PASSWORD");
-    $conn = mysqli_connect("localhost", "media_share", $passwd, "media_share");
+    $conn = mysqli_connect("localhost", "media_share", get_db_passwd(), "media_share");
     if (!$conn && $exit_on_error) {
         if ($header) {
-            http_response_code(500);
+            http_response_code(501);
         }
         exit();
     }
@@ -69,10 +70,10 @@ function get_session_constraint($active_period) {
 }
 
 function strip_file_extension($fname) {
-    return preg_replace("\\.[^\\.]*$", "", $fname);
+    return preg_replace("/\.[^\.]*$/", "", $fname);
 }
 
 // NOTE this doesn't keep the dot.
 function strip_but_file_extension($fname) {
-    return preg_replace("^([^\\.]*\\.)*", "", $fname);
+    return preg_replace("/^([^\.]*\.)*/", "", $fname);
 }

@@ -18,6 +18,6 @@ $qry_media_id = "SELECT max(id) FROM media";
 
 $cki_user_session = "session_key";
 
-$str_media_dir = "img/";
+$str_media_dir = __DIR__ . "/media";
 $int_max_upload_size = 268435456;  // 256 MiB
 $COOKIE_ACTIVE_PERIOD = 2 * 24 * 3600;
