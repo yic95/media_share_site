@@ -50,4 +50,29 @@ function media_element($type, $view, $src, $alt) {
     }
     return $result;
 }
-?>
+
+function conn_db($exit_on_error = 1, $header = 1) {
+    $passwd = getenv("MEDIA_SHARE_PASSWORD");
+    $conn = mysqli_connect("localhost", "media_share", $passwd, "media_share");
+    if (!$conn && $exit_on_error) {
+        if ($header) {
+            http_response_code(500);
+        }
+        exit();
+    }
+    mysqli_set_charset($conn, "utf8mb4");
+    return $conn;
+}
+
+function get_session_constraint($active_period) {
+    return time() - $active_period;
+}
+
+function strip_file_extension($fname) {
+    return preg_replace("\\.[^\\.]*$", "", $fname);
+}
+
+// NOTE this doesn't keep the dot.
+function strip_but_file_extension($fname) {
+    return preg_replace("^([^\\.]*\\.)*", "", $fname);
+}

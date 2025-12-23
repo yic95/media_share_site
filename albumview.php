@@ -2,9 +2,8 @@
 include ("queries.php");
 include ("util.php");
 
-$passwd = getenv("MEDIA_SHARE_PASSWORD");
-$conn = mysqli_connect("localhost", "media_share", $passwd, "media_share");
-mysqli_set_charset($conn, "utf8mb4");
+$conn = conn_db();
+
 $album_id = $_GET["albumid"];
 $album_id = 0;
 
@@ -19,6 +18,7 @@ $title = "";
 
 if ($num_row == 0 || is_null($album_id)) {
     $title = "找不到合輯！";
+    http_response_code(404);
 } else {
     $title = $album_metadata[1];
 }
