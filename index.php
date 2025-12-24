@@ -565,36 +565,36 @@
 
         <section id="create" class="page">
             <h2 style="margin-bottom: 20px;">Create New Post</h2>
-            <div class="create-container">
-                <div class="upload-zone">
-                    <div style="font-size: 3rem;">📁</div>
-                    <p>+新增媒體</p>
-                    <input type="file" id="fileInput" name="upload_file" accept="image/*">
+            <form action="mediaupload2.php" method="post" enctype="multipart/form-data">
+                <div class="create-container">
+                    <div class="upload-zone">
+                        <div style="font-size: 3rem;">📁</div>
+                        <p>+新增媒體</p>
+                        <input type="file" id="fileInput" name="upload_file" accept="image/*">
+                    </div>
+                    <div class="form-zone">
+                        <div class="form-group">
+                            <label>名稱</label>
+                            <input type="text" name="album-title" class="form-control" placeholder="輸入標題...">
+                        </div>
+
+                        <div class="form-group">
+                            <label>媒體類型</label>
+                            <select name="media-type" class="form-control">
+                                <option>請選擇</option>
+                                <option value="type1">類型1</option>
+                                <option value="type2">類型2</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>圖片敘述</label>
+                            <textarea name="description" class="form-control" placeholder="輸入內容..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" onclick="alert('上傳成功！並返回首頁'); navigateTo('home');">上傳</button>
+                    </div>
                 </div>
-                <div class="form-zone">
-                    <div class="form-group">
-                        <label>名稱</label>
-                        <input type="text" name="album-title" class="form-control" placeholder="輸入標題...">
-                    </div>
-
-                    <div class="form-group">
-                        <label>媒體類型</label>
-                        <select name="media-type" class="form-control">
-                            <option>請選擇</option>
-                            <option value="type1">類型1 (Image)</option>
-                            <option value="type2">類型2 (Video)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>圖片敘述</label>
-                        <textarea name="description" class="form-control" placeholder="輸入內容..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn-primary"
-                        onclick="alert('上傳成功！並返回首頁'); navigateTo('home');">上傳</button>
-                </div>
-            </div>
+            </form>    
         </section>
 
         <section id="about-us" class="page">
