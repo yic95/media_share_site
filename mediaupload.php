@@ -3,6 +3,10 @@
 include ("queries.php");
 include ("util.php");
 
+error_reporting(E_ALL);
+ini_set('display_errors',1);
+echo "script was executed under user: ".exec('whoami');
+
 $str_media_upload_textarea = "兩三句就好";
 $accept = [
     "mp3", "wav", "aac", "flac", "ogg",
@@ -28,18 +32,19 @@ $accept_str = "";
 }
 
 /// 上傳功能部分
+$is_error = 0;
+$message = "";
+$alt_text_value = $str_media_upload_textarea;
+$should_has_file = $_POST["should_has_file"];
 if ($should_has_file) {
-    $should_has_file = $_POST["should_has_file"];
-    $is_error = 0;
     $upload_succeed = 0;
-    $message = "";
     $upload_file_attr = $_FILES["media"];
     
     // 確定檔案上傳沒有出錯
     if (is_null($upload_file_attr)) {
         $is_error = 1;
         $message = "沒有檔案";
-    } else if (is_array($upload_file_attr)) {
+    } else if (false && is_array($upload_file_attr)) {
         $is_error = 1;
         $message = "有多個檔案";
     } else {
@@ -55,7 +60,7 @@ if ($should_has_file) {
 
         case 3: case 4: case 5: case 6: case 7: case 8:
             $is_error = 1;
-            $message = "上傳過程出錯";
+            $message = "上傳過程出錯." . $upload_file_attr["error"];
             break;
             
             default:
@@ -64,7 +69,8 @@ if ($should_has_file) {
             break;
         }
     }
-    $upload_succeed = 1;
+    if (!$is_error)
+        $upload_succeed = 1;
     
     if (!$is_error && !$_POST["description"] || $_POST["description"] == $str_media_upload_textarea) {
         $is_error = 1;
@@ -88,20 +94,26 @@ if ($should_has_file) {
     // 確定本機沒有同樣的圖片
     $new_file_name = "";
     if (!$is_error) {
-        $new_file_name = $str_media_dir
-                         . hash_file("sha256", $upload_file_attr["tmp_name"])
-                         . "."
-                         . strip_but_file_extension(basename($upload_file_attr["name"]));
-        if (file_exists($new_file_name)) {
+        $ext_name = strip_but_file_extension(basename($upload_file_attr["name"]));
+        $new_file_name = hash_file("sha256", $upload_file_attr["tmp_name"])
+                         . ($ext_name == ""? "" : ".")
+                         . $ext_name;
+        if (file_exists("$str_media_dir/$new_file_name")) {
             $is_error = 1;
             $message = "有同樣的媒體";
         }
     }
 
+    $conn = 0;
+    if (!$is_error) {
+        $conn = conn_db(0);
+        if (!$conn)
+            $is_error = 1;
+    }
+
     // 檢查通過，確定上傳
     if (!$is_error) {
         $user_cookie = $_COOKIE[$cki_user_session];
-        $conn = conn_db();
         $stat_user_session = $conn->prepare($qry2_user_session);
         $stat_user_session->bind_param("ii", $user_cookie, get_session_constraint($COOKIE_ACTIVE_PERIOD));
         $stat_user_session->execute();
@@ -119,8 +131,10 @@ if ($should_has_file) {
         $file_desc = strip_tags($_POST["description"]) ?? "No Description";  // 這應該要有值
         $file_id = mysqli_fetch_array(mysqli_query($conn, $qry_media_id))[0] ?? 0;
 
-        
-        if (move_uploaded_file($upload_file_attr["tmp_name"], $new_file_name)) {
+        if (!file_exists($str_media_dir)) {
+            mkdir($str_media_dir);
+        }
+        if (move_uploaded_file($upload_file_attr["tmp_name"], "$str_media_dir/$new_file_name")) {
             // INSERT INTO media (`id`, `type`, `title`, `is_local`, `is_private`, `location`, `file_size`, `mime_type`)
             $stat_insert_media = $conn->prepare($qry8_insert_media);
             $stat_insert_media->bind_param("issiisis", $file_id, $file_type,
@@ -132,7 +146,8 @@ if ($should_has_file) {
             $stat_insert_media_create->execute();
         } else {
             $is_error = 1;
-            $message = "上傳過程出錯";
+            $message = "移檔過程出錯（{$upload_file_attr["name"]}: {$new_file_name}，"
+                        . "{$str_media_dir}/{$new_file_name}，" . (is_writable("$str_media_dir")? "可寫）" : "不可寫）");
         }
     }
 
@@ -140,6 +155,8 @@ if ($should_has_file) {
         unlink($upload_file_attr["tmp_name"]);
     }
 }
+if ($is_error)
+    $alt_text_value = $_POST["description"];
 
 ?><!DOCTYPE html>
 <html>
@@ -156,11 +173,16 @@ function enableSubmitButton() {
         </script>
     </head>
     <body>
+        <?php
+        if ($is_error) {
+            echo "<div id=\"errmsg\">上次上傳檔案有錯誤：{$message}</div>";
+        }
+        ?>
         <form enctype="multipart/form-data" action="mediaupload.php" method="POST">
             <input type="hidden" name="should_has_file" value="1">
             <input type="hidden" name="MAX_FILE_SIZE" value="<?= $int_max_upload_size; ?>" accept="<?= $accept_str; ?>">
             上傳媒體：<input required type="file" name="media"> <br />
-            描述文字：<input required onclick="enableSubmitButton()" type="text" name="description" value="<?= $str_media_upload_textarea; ?>"> <br />
+            描述文字：<input required onclick="enableSubmitButton()" type="text" name="description" value="<?= $alt_text_value; ?>"> <br />
             <input type="checkbox" name="is_private"> 限定僅有註冊使用者能檢視<br /> 
             <input id="submit"type="submit" value="上傳媒體">
         </form>
