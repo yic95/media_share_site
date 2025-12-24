@@ -433,7 +433,7 @@
             color: black;
         }
 
-        .profile-about-us {
+        .profile-about-us{
             background: white;
             padding: 20px;
             border-radius: 15px;
