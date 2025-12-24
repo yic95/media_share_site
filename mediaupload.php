@@ -3,9 +3,11 @@
 include ("queries.php");
 include ("util.php");
 
+/*
 error_reporting(E_ALL);
 ini_set('display_errors',1);
 echo "script was executed under user: ".exec('whoami');
+*/
 
 $str_media_upload_textarea = "兩三句就好";
 $accept = [
@@ -132,18 +134,22 @@ if ($should_has_file) {
         $file_id = mysqli_fetch_array(mysqli_query($conn, $qry_media_id))[0] ?? 0;
 
         if (!file_exists($str_media_dir)) {
-            mkdir($str_media_dir);
+            mkdir($str_media_dir, 0744);
         }
         if (move_uploaded_file($upload_file_attr["tmp_name"], "$str_media_dir/$new_file_name")) {
             // INSERT INTO media (`id`, `type`, `title`, `is_local`, `is_private`, `location`, `file_size`, `mime_type`)
+            $is_local = 1;
             $stat_insert_media = $conn->prepare($qry8_insert_media);
             $stat_insert_media->bind_param("issiisis", $file_id, $file_type,
-                                        $file_title,/* is local = */1 ,
+                                        $file_title, $is_local, $file_is_private,
                                         $new_file_name, $file_size, $mime_type);
             $stat_insert_media->execute();
             $stat_insert_media_create = $conn->prepare($qry3_insert_media_create);
             $stat_insert_media_create->bind_param("iis", $file_id, $userid, date("Y-m-d H:i:s"));
             $stat_insert_media_create->execute();
+            $stat_insert_media_meta = $conn->prepare($qry2_insert_media_meta);
+            $stat_insert_media_meta->bind_param("is", $file_id, $file_desc);
+            $stat_insert_media_meta->execute();
         } else {
             $is_error = 1;
             $message = "移檔過程出錯（{$upload_file_attr["name"]}: {$new_file_name}，"
