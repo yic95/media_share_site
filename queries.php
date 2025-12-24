@@ -15,6 +15,7 @@ $qry2_insert_media_meta = "INSERT INTO media_metadata (`media_id`, `description`
 $qry3_insert_media_create = "INSERT INTO media_create (`media_id`, `user_id`, `create_date`) VALUES (?, ?, ?)";
 $qry2_user_session = "SELECT user_id FROM user_session WHERE session_key = ? AND last_active > ? LIMIT 1";
 $qry1_media_file = "SELECT `is_private`, `location`, `is_local`, `mime_type`, `file_size` FROM media WHERE id = ? LIMIT 1";
+$qry1_file_hash = "SELECT `id` FROM media WHERE is_local = 1 AND `location` = ?";
 $qry_media_id = "SELECT IFNULL(MAX(id) + 1, 0) FROM media";
 
 $cki_user_session = "session_key";

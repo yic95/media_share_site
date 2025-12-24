@@ -51,14 +51,14 @@ if ($should_has_file) {
         $message = "有多個檔案";
     } else {
         switch ($upload_file_attr["error"]) {
-            case UPLOAD_ERR_OK:
-                // 無錯誤
-            break;
-            
-            case 1: case 2:
-                $is_error = 1;
+        case UPLOAD_ERR_OK:
+            // 無錯誤
+        break;
+        
+        case 1: case 2:
+            $is_error = 1;
             $message = "檔案太大";
-            break;
+        break;
 
         case 3: case 4: case 5: case 6: case 7: case 8:
             $is_error = 1;
@@ -67,7 +67,7 @@ if ($should_has_file) {
             
             default:
             $is_error = 1;
-            $message = "其他錯誤";
+            $message = "內部錯誤";
             break;
         }
     }
@@ -92,6 +92,14 @@ if ($should_has_file) {
         }
     }
 
+    $conn = 0;
+    if (!$is_error) {
+        $conn = conn_db(0);
+        if (!$conn) {
+            $is_error = 1;
+            $message = "資料庫連線錯誤";
+        }
+    }
 
     // 確定本機沒有同樣的圖片
     $new_file_name = "";
@@ -100,28 +108,36 @@ if ($should_has_file) {
         $new_file_name = hash_file("sha256", $upload_file_attr["tmp_name"])
                          . ($ext_name == ""? "" : ".")
                          . $ext_name;
-        if (file_exists("$str_media_dir/$new_file_name")) {
+        $stat_file_hash = $conn->prepare($qry1_file_hash);
+        $stat_file_hash->bind_param("i", $new_file_name);
+        $stat_file_hash->execute();
+        $result = $stat_file_hash->get_result();
+        if (mysqli_num_rows($result) >= 1) {
             $is_error = 1;
             $message = "有同樣的媒體";
         }
     }
 
-    $conn = 0;
+    // 確定移檔成功
     if (!$is_error) {
-        $conn = conn_db(0);
-        if (!$conn)
+        if (!file_exists($str_media_dir)) {
+            mkdir($str_media_dir, 0744);
+        }
+        if (!move_uploaded_file($upload_file_attr["tmp_name"], "$str_media_dir/$new_file_name")) {
             $is_error = 1;
+            $message = "移檔過程出錯（{$upload_file_attr["name"]}: {$new_file_name}，"
+                        . "{$str_media_dir}/{$new_file_name}，" . (is_writable("$str_media_dir")? "可寫）" : "不可寫）");
+        }
     }
 
-    // 檢查通過，確定上傳
     if (!$is_error) {
         $user_cookie = $_COOKIE[$cki_user_session];
         $stat_user_session = $conn->prepare($qry2_user_session);
         $stat_user_session->bind_param("ii", $user_cookie, get_session_constraint($COOKIE_ACTIVE_PERIOD));
         $stat_user_session->execute();
         $result_user_session = $stat_user_session->get_result();
-        
-        $userid = 0;  // TODO 資料庫：把 user.id = 0 的資料移到其他地方
+
+        $userid = 0;
         if (mysqli_num_rows($result_user_session) > 0) {
             $userid = mysqli_fetch_array($result_user_session)[0];
         }
@@ -131,29 +147,32 @@ if ($should_has_file) {
         $file_type = str_split($mime_type, 5)[0];
         $file_is_private = $_POST["is_private"] ?? 0;
         $file_desc = strip_tags($_POST["description"]) ?? "No Description";  // 這應該要有值
-        $file_id = mysqli_fetch_array(mysqli_query($conn, $qry_media_id))[0] ?? 0;
+        $is_local = 1;
 
-        if (!file_exists($str_media_dir)) {
-            mkdir($str_media_dir, 0744);
-        }
-        if (move_uploaded_file($upload_file_attr["tmp_name"], "$str_media_dir/$new_file_name")) {
+        mysqli_begin_transaction($conn);
+        try {
+            $file_id = mysqli_fetch_array(mysqli_query($conn, $qry_media_id))[0] ?? 0;
+            
             // INSERT INTO media (`id`, `type`, `title`, `is_local`, `is_private`, `location`, `file_size`, `mime_type`)
-            $is_local = 1;
             $stat_insert_media = $conn->prepare($qry8_insert_media);
             $stat_insert_media->bind_param("issiisis", $file_id, $file_type,
                                         $file_title, $is_local, $file_is_private,
                                         $new_file_name, $file_size, $mime_type);
             $stat_insert_media->execute();
+
             $stat_insert_media_create = $conn->prepare($qry3_insert_media_create);
             $stat_insert_media_create->bind_param("iis", $file_id, $userid, date("Y-m-d H:i:s"));
             $stat_insert_media_create->execute();
+
             $stat_insert_media_meta = $conn->prepare($qry2_insert_media_meta);
             $stat_insert_media_meta->bind_param("is", $file_id, $file_desc);
             $stat_insert_media_meta->execute();
-        } else {
+            mysqli_commit($conn);
+        } catch (mysqli_sql_exception $exception) {
             $is_error = 1;
-            $message = "移檔過程出錯（{$upload_file_attr["name"]}: {$new_file_name}，"
-                        . "{$str_media_dir}/{$new_file_name}，" . (is_writable("$str_media_dir")? "可寫）" : "不可寫）");
+            $message = "資料庫錯誤";
+            mysqli_rollback($conn);
+            throw $exception;
         }
     }
 
@@ -190,7 +209,7 @@ function enableSubmitButton() {
             上傳媒體：<input required type="file" name="media"> <br />
             描述文字：<input required onclick="enableSubmitButton()" type="text" name="description" value="<?= $alt_text_value; ?>"> <br />
             <input type="checkbox" name="is_private"> 限定僅有註冊使用者能檢視<br /> 
-            <input id="submit"type="submit" value="上傳媒體">
+            <input id="submit" type="submit" value="上傳媒體">
         </form>
     </body>
 </html>
