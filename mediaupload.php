@@ -6,7 +6,6 @@ include ("util.php");
 /*
 error_reporting(E_ALL);
 ini_set('display_errors',1);
-echo "script was executed under user: ".exec('whoami');
 */
 
 $str_media_upload_textarea = "兩三句就好";
@@ -46,7 +45,7 @@ if ($should_has_file) {
     if (is_null($upload_file_attr)) {
         $is_error = 1;
         $message = "沒有檔案";
-    } else if (false && is_array($upload_file_attr)) {
+    } else if (is_array($upload_file_attr["error"])) {
         $is_error = 1;
         $message = "有多個檔案";
     } else {
@@ -55,10 +54,13 @@ if ($should_has_file) {
             // 無錯誤
         break;
         
-        case 1: case 2:
+        case 1:
             $is_error = 1;
             $message = "檔案太大";
-        break;
+            /* FALLTHRU */
+        case 2:
+            $message = "檔案太大.";
+            break;
 
         case 3: case 4: case 5: case 6: case 7: case 8:
             $is_error = 1;
@@ -109,12 +111,13 @@ if ($should_has_file) {
                          . ($ext_name == ""? "" : ".")
                          . $ext_name;
         $stat_file_hash = $conn->prepare($qry1_file_hash);
-        $stat_file_hash->bind_param("i", $new_file_name);
+        $stat_file_hash->bind_param("s", $new_file_name);
         $stat_file_hash->execute();
         $result = $stat_file_hash->get_result();
-        if (mysqli_num_rows($result) >= 1) {
+        $rescnt = mysqli_num_rows($result);
+        if ($rescnt >= 1) {
             $is_error = 1;
-            $message = "有同樣的媒體";
+            $message = "有{$rescnt}個同樣的媒體";
         }
     }
 
