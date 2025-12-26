@@ -148,7 +148,9 @@ if ($should_has_file) {
         $file_size = $upload_file_attr["size"];
         $file_title = $upload_file_attr["name"];
         $file_type = str_split($mime_type, 5)[0];
-        $file_is_private = $_POST["is_private"] ?? 0;
+        $file_is_private = 0;
+        if ($_POST["is_private"])  // is_private == "on"
+            $file_is_private = 1;
         $file_desc = strip_tags($_POST["description"]) ?? "No Description";  // 這應該要有值
         $is_local = 1;
 
@@ -210,7 +212,7 @@ function enableSubmitButton() {
             <input type="hidden" name="should_has_file" value="1">
             <input type="hidden" name="MAX_FILE_SIZE" value="<?= $int_max_upload_size; ?>" accept="<?= $accept_str; ?>">
             上傳媒體：<input required type="file" name="media"> <br />
-            描述文字：<input required onclick="enableSubmitButton()" type="text" name="description" value="<?= $alt_text_value; ?>"> <br />
+            描述文字：<input required onchange="enableSubmitButton()" type="text" name="description" value="<?= $alt_text_value; ?>"> <br />
             <input type="checkbox" name="is_private"> 限定僅有註冊使用者能檢視<br /> 
             <input id="submit" type="submit" value="上傳媒體">
         </form>
