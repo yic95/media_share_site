@@ -50,6 +50,7 @@ if (!$fp) {
     http_response_code(200);
     header("Content-Type: " . $minfo[3]);
     header("Content-Length: " . $minfo[4]);
+    header("Cache-Control: max-age=" . 2419200);  // 28 days
     fpassthru($fp);
 }
 exit(0);

@@ -1,6 +1,6 @@
 <?php
 
-include ("secret.php");
+include ("secret.php");  // provides get_db_passwd()
 
 function text_to_html($text) {
     $result = "";
@@ -67,6 +67,21 @@ function conn_db($exit_on_error = 1, $header = 1) {
 
 function get_session_constraint($active_period) {
     return time() - $active_period;
+}
+
+function get_session_user($conn, $session) {
+    $conn->prepare("SELECT user_id FROM user_session WHERE session_key = ? AND last_active > ? LIMIT 1");
+    $conn->bind_param("si", $session, get_session_constraint(172800));  // 2 days
+    $conn->execute();
+    $result = $conn->get_result();
+    if (mysqli_num_rows($result) == 0)
+        return false;
+    else 
+        mysqli_fetch_array($result)[0];
+}
+
+function gen_session_cookie() {
+    return bin2hex(random_bytes(32));
 }
 
 function strip_file_extension($fname) {
