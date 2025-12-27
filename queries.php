@@ -21,6 +21,7 @@ $qry_media_id = "SELECT IFNULL(MAX(id) + 1, 0) FROM media";
 $qry1_media_file = "SELECT `is_private`, `location`, `is_local`, `mime_type`, `file_size` FROM media WHERE id = ? LIMIT 1";
 $qry1_file_hash = "SELECT `id` FROM media WHERE is_local = 1 AND `location` = ?";
 $qry2_user_session = "SELECT user_id FROM user_session WHERE session_key = ? AND last_active > ? LIMIT 1";
+$qry2_user_password = "SELECT `id` FROM user WHERE `username` = ? AND `password_hash` = SHA2(?, 256)";
 $qry1_user_username = "SELECT `id`, `email_address`, `password_hash` FROM user WHERE username = ?";
 $qry_user_id = "SELECT IFNULL(MAX(id) + 1, 1) FROM user";  // uid 0 is reserved for anonymous uploads
 
