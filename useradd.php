@@ -13,8 +13,9 @@ $email = $_POST["email"];
 $password = $_POST["password"];
 $description = strip_tags($_POST["desc"] ?? "");
 
-if (!$username || !$email || !$password || !$description)
-    $is_error = 1;
+if (!$username || !$email || !$password || !$description) {
+    $is_error = 400;
+}
 
 $ip = "";
 $today_ts = 0;
@@ -35,8 +36,9 @@ if (!$is_error) {
     $stat_username = $conn->prepare($qry1_user_username);
     $stat_username->bind_param("s", $username);
     $stat_username->execute();
-    if (mysqli_num_rows($stat_username->get_result()) > 0)
-        $is_error = 1;
+    if (mysqli_num_rows($stat_username->get_result()) > 0) {
+        $is_error = 400;
+    }
 }
 
 if (!$is_error) {
@@ -54,9 +56,14 @@ if (!$is_error) {
         $stat_insert_user_sess->execute();
         mysqli_commit($conn);
     } catch (mysqli_sql_exception $exception) {
+        $is_error = 500;
         mysqli_rollback($conn);
         throw $exception;
     }
 
     header("Set-Cookie: {$cki_user_session}=\"{$session}\"");
+}
+
+if ($is_error > 299) {
+    http_response_code($is_error);
 }
